@@ -251,10 +251,16 @@ function initialState() {
 const AUDIO_BASE_URL = "https://raw.githubusercontent.com/zhasan1990-sys/sanaly-sabi-audio/main/";
 const AUDIO_EXT = "mp3";
 
+// CDN кэшін айналып өту үшін нұсқа белгісі. Дыбыс файлдарын GitHub-та
+// қайта жүктегеннен кейін де осы санды өсірсең (мыс. "v3"), браузер мен
+// GitHub-тың raw CDN-і оны ЖАҢА файл деп қабылдап, ескі кэштелген
+// нұсқаны емес, дәл соңғы жүктелген mp3-ті береді.
+const AUDIO_VERSION = "v2";
+
 function realAudioUrl(text, isSound) {
   if (!AUDIO_BASE_URL) return null;
   const key = (isSound ? `${text}__sound` : text).toUpperCase();
-  return `${AUDIO_BASE_URL}${encodeURIComponent(key)}.${AUDIO_EXT}`;
+  return `${AUDIO_BASE_URL}${encodeURIComponent(key)}.${AUDIO_EXT}?${AUDIO_VERSION}`;
 }
 
 // Ағымдағы ойналып жатқан аудионы бақылаймыз — жаңа дыбыс басталғанда
