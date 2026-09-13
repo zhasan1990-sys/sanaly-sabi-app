@@ -137,10 +137,67 @@ const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
 const STORAGE_KEY = "sanaly-sabi:app-state";
 
+// Әмбебап сақтау: Telegram Mini App ішінде — CloudStorage (Telegram
+// аккаунтқа байланған, құрылғылар арасында синхрондалады), Claude.ai
+// артефактында — window.storage, ал әдеттегі браузерде — localStorage.
+function getTelegramCloudStorage() {
+  try {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    return tg && tg.CloudStorage ? tg.CloudStorage : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function storageGetRaw(key) {
+  const cloud = getTelegramCloudStorage();
+  if (cloud) {
+    return new Promise((resolve) => {
+      cloud.getItem(key, (err, value) => resolve(err ? null : value || null));
+    });
+  }
+  try {
+    if (window.storage) {
+      const res = await window.storage.get(key, false);
+      return res ? res.value : null;
+    }
+  } catch (e) {
+    /* кілт жоқ болуы мүмкін — жалғастырамыз */
+  }
+  try {
+    return window.localStorage.getItem(key);
+  } catch (e) {
+    return null;
+  }
+}
+
+async function storageSetRaw(key, value) {
+  const cloud = getTelegramCloudStorage();
+  if (cloud) {
+    return new Promise((resolve) => {
+      cloud.setItem(key, value, (err, ok) => resolve(!err && ok));
+    });
+  }
+  try {
+    if (window.storage) {
+      await window.storage.set(key, value, false);
+      return true;
+    }
+  } catch (e) {
+    /* жалғастырамыз */
+  }
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 async function loadState() {
   try {
-    const res = await window.storage.get(STORAGE_KEY, false);
-    if (res && res.value) return JSON.parse(res.value);
+    const raw = await storageGetRaw(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
   } catch (e) {
     /* кілт жоқ немесе қате — бастапқы күймен жалғастырамыз */
   }
@@ -149,7 +206,7 @@ async function loadState() {
 
 async function saveState(state) {
   try {
-    await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+    await storageSetRaw(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
     console.error("Сақтау қатесі:", e);
   }
@@ -1423,6 +1480,23 @@ export default function App() {
   const [screen, setScreen] = useState("welcome");
   const [state, setState] = useState(initialState());
   const [diagResults, setDiagResults] = useState([]);
+
+  // Telegram Mini App ретінде ашылса — Telegram-ның WebApp SDK-сын
+  // іске қосамыз: толық экранға жаю, жоғарыдан төмен сырғытып жабу
+  // қаупін болдырмау, тақырыпты (theme) сәйкестендіру.
+  useEffect(() => {
+    try {
+      const tg = window.Telegram && window.Telegram.WebApp;
+      if (tg) {
+        tg.ready();
+        tg.expand();
+        if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+        if (tg.setHeaderColor) tg.setHeaderColor("#fff7ed"); // orange-50-ге сай
+      }
+    } catch (e) {
+      /* Telegram сыртында ашылса — үнсіз елемей өтеміз */
+    }
+  }, []);
 
   // Экран ауысқан сайын алдыңғы дыбысты міндетті түрде тоқтатамыз —
   // әйтпесе алдыңғы бетте басталған дыбыс жаңа бетте де ойнай беруі мүмкін.
