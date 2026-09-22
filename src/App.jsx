@@ -621,7 +621,7 @@ const DIAGNOSTIC_STEPS = [
   {
     skill: "phonemic",
     prompt: "М дыбысы бар сөзді тап",
-    audio: "М",
+    audio: "МЫСЫҚ",
     options: [
       { label: "Алма", emoji: "🍎", correct: false },
       { label: "Үй", emoji: "🏠", correct: false },
@@ -697,7 +697,7 @@ function makeTask(skillKey) {
       skill: "phonemic",
       type: "phoneme_pick",
       prompt: `${letter} дыбысы бар суретті тап`,
-      audio: letter,
+      audio: correctWord.word,
       options: shuffle([{ ...correctWord, correct: true }, ...distractors.map((d) => ({ ...d, correct: false }))]),
     };
   }
@@ -782,7 +782,7 @@ function TaskCard({ task, onAnswer, wrongStreak }) {
       <div>
         <div className="flex items-center gap-3 mb-5">
           <p className="font-bold text-stone-800 text-base flex-1">{task.prompt}</p>
-          {task.audio && <SoundButton text={task.audio} isSound={task.type === "phoneme_pick"} />}
+          {task.audio && <SoundButton text={task.audio} />}
         </div>
         <div className="grid grid-cols-3 gap-3">
           {task.options.map((o, i) => (
