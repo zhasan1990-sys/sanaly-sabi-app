@@ -90,6 +90,46 @@ const WORD_BANK = [
   { word: "ЕСІК", emoji: "🚪", syll: ["Е", "СІК"] },
   { word: "ҚАР", emoji: "❄️", syll: ["ҚАР"] },
   { word: "ЖАҢБЫР", emoji: "🌧️", syll: ["ЖАҢ", "БЫР"] },
+  // --- Жаңадан қосылған сөздер: сөздік қорды кеңейту үшін ---
+  { word: "ТҮЛКІ", emoji: "🦊", syll: ["ТҮЛ", "КІ"] },
+  { word: "ҚОРАП", emoji: "📦", syll: ["ҚО", "РАП"] },
+  { word: "ОРМАН", emoji: "🌲", syll: ["ОР", "МАН"] },
+  { word: "АЙНА", emoji: "🪞", syll: ["АЙ", "НА"] },
+  { word: "СӨМКЕ", emoji: "🎒", syll: ["СӨМ", "КЕ"] },
+  { word: "БҰЛТ", emoji: "☁️", syll: ["БҰЛТ"] },
+  { word: "ЖҰЛДЫЗ", emoji: "⭐", syll: ["ЖҰЛ", "ДЫЗ"] },
+  { word: "ПОЕЗД", emoji: "🚂", syll: ["ПО", "ЕЗД"] },
+  { word: "ҰШАҚ", emoji: "✈️", syll: ["Ұ", "ШАҚ"] },
+  { word: "КЕМЕ", emoji: "🚢", syll: ["КЕ", "МЕ"] },
+  { word: "ШАМ", emoji: "💡", syll: ["ШАМ"] },
+  { word: "ОРЫНДЫҚ", emoji: "🪑", syll: ["О", "РЫН", "ДЫҚ"] },
+  { word: "ШАПКЕ", emoji: "🧢", syll: ["ШАП", "КЕ"] },
+  { word: "АЙДАҺАР", emoji: "🐉", syll: ["АЙ", "ДА", "ҺАР"] },
+  { word: "ЖЫЛАН", emoji: "🐍", syll: ["ЖЫ", "ЛАН"] },
+  { word: "ТАУЫҚ", emoji: "🐔", syll: ["ТА", "УЫҚ"] },
+  { word: "СИЫР", emoji: "🐄", syll: ["СИ", "ЫР"] },
+  { word: "ЕШКІ", emoji: "🐐", syll: ["ЕШ", "КІ"] },
+  { word: "БҰҒЫ", emoji: "🦌", syll: ["БҰ", "ҒЫ"] },
+  { word: "ТИІН", emoji: "🐿️", syll: ["ТИ", "ІН"] },
+  { word: "БАҚА", emoji: "🐸", syll: ["БА", "ҚА"] },
+  { word: "АРА", emoji: "🐝", syll: ["А", "РА"] },
+  { word: "КӨБЕЛЕК", emoji: "🦋", syll: ["КӨ", "БЕ", "ЛЕК"] },
+  { word: "ІНІ", emoji: "👦", syll: ["І", "НІ"] },
+  { word: "ҰЯ", emoji: "🪺", syll: ["Ұ", "Я"] },
+  { word: "ЫДЫС", emoji: "🍽️", syll: ["Ы", "ДЫС"] },
+  { word: "ХАТ", emoji: "✉️", syll: ["ХАТ"] },
+  { word: "ЦИРК", emoji: "🎪", syll: ["ЦИРК"] },
+  { word: "ЧАЙНИК", emoji: "🫖", syll: ["ЧАЙ", "НИК"] },
+  { word: "ШАР", emoji: "🎈", syll: ["ШАР"] },
+  { word: "ШАЙ", emoji: "☕", syll: ["ШАЙ"] },
+  { word: "ЮБКА", emoji: "👗", syll: ["ЮБ", "КА"] },
+  { word: "ЭКРАН", emoji: "📺", syll: ["ЭК", "РАН"] },
+  { word: "ЛИМОН", emoji: "🍋", syll: ["ЛИ", "МОН"] },
+  { word: "РАДИО", emoji: "📻", syll: ["РА", "ДИ", "О"] },
+  { word: "ЗООПАРК", emoji: "🦁", syll: ["ЗО", "О", "ПАРК"] },
+  { word: "ФУТБОЛ", emoji: "⚽", syll: ["ФУТ", "БОЛ"] },
+  { word: "ВАННА", emoji: "🛁", syll: ["ВАН", "НА"] },
+  { word: "ЯГУАР", emoji: "🐆", syll: ["Я", "ГУ", "АР"] },
 ];
 
 const wordByLetter = (ltr) => WORD_BANK.filter((w) => w.word[0] === ltr);
@@ -675,13 +715,14 @@ const DIAGNOSTIC_STEPS = [
 
 // Апта сайынғы сабақ тапсырмаларын ағымдағы прогреске сай құрайды
 function buildLessonQueue(progress) {
-  const weakest = [...SKILLS].sort((a, b) => progress[a.key].score - progress[b.key].score).slice(0, 3);
-  const tasks = [];
-  weakest.forEach((s) => {
-    tasks.push(makeTask(s.key));
-    tasks.push(makeTask(s.key));
-  });
-  return shuffle(tasks).slice(0, 6);
+  // Әр сабақта БАРЛЫҚ 7 дағдыдан кем дегенде бір тапсырма болады —
+  // сонда ешбір дағды (мыс. диктант) "әлсіз үштіктен" шығып кетіп,
+  // мүлде көрінбей қалмайды. Ең әлсіз дағдыға қосымша бір тапсырма
+  // қосып, соған сәл көбірек көңіл бөлеміз.
+  const tasks = SKILLS.map((s) => makeTask(s.key));
+  const weakest = [...SKILLS].sort((a, b) => progress[a.key].score - progress[b.key].score)[0];
+  if (weakest) tasks.push(makeTask(weakest.key));
+  return shuffle(tasks);
 }
 
 let taskCounter = 0;
