@@ -312,6 +312,7 @@ function stopCurrentAudio() {
     try {
       currentAudio.pause();
       currentAudio.currentTime = 0;
+      currentAudio.remove();
     } catch (e) {
       /* елемей өтеміз */
     }
@@ -332,8 +333,20 @@ function stopCurrentAudio() {
 function playRealAudio(url) {
   return new Promise((resolve) => {
     try {
-      const audio = new Audio(url);
+      const audio = new Audio();
+      audio.crossOrigin = "anonymous"; // кейбір Android WebView-лерде
+      audio.preload = "auto"; // осы екеуі болмаса, cross-origin аудио үнсіз сәтсіз болады
+      audio.style.display = "none";
+      document.body.appendChild(audio); // DOM-ға тіркелмеген Audio() кейбір
+      audio.src = url; // Android WebView-лерде дыбыссыз сәтсіз болады
       let settled = false;
+      const cleanup = () => {
+        try {
+          audio.remove();
+        } catch (e) {
+          /* елемей өтеміз */
+        }
+      };
       const done = (ok) => {
         if (settled) return;
         settled = true;
@@ -341,9 +354,11 @@ function playRealAudio(url) {
       };
       audio.addEventListener("ended", () => {
         if (currentAudio === audio) currentAudio = null;
+        cleanup();
       });
       audio.addEventListener("error", () => {
         if (currentAudio === audio) currentAudio = null;
+        cleanup();
         done(false);
       });
       currentAudio = audio;
@@ -352,6 +367,7 @@ function playRealAudio(url) {
         .then(() => done(true))
         .catch(() => {
           if (currentAudio === audio) currentAudio = null;
+          cleanup();
           done(false);
         });
       // Тек play() уәдесі мүлде жауап бермей қалатын сирек жағдайға арналған
@@ -364,6 +380,7 @@ function playRealAudio(url) {
             /* елемей өтеміз */
           }
           if (currentAudio === audio) currentAudio = null;
+          cleanup();
           done(false);
         }
       }, 3000);
